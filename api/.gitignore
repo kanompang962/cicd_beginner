@@ -1,0 +1,79 @@
+## .NET Core / ASP.NET Core
+bin/
+obj/
+out/
+[Bb]uild/
+[Ll]og/
+TestResults/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Visual Studio
+.vs/
+*.vc.db
+*.vscode/
+
+# Rider IDE
+.idea/
+*.sln.iml
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# dotnet publish
+publish/
+*.pubxml
+*.Publish.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Logs
+*.log
+
+# Secrets (managed by user secrets)
+secrets.json
+
+# Environment files
+.env
+.env.*
+
+# Azure
+*.azure*
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Backup & temp files
+*~
+*.tmp
+*.bak
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Global tool cache
+.dotnet_tool/
+
+# Tye (for microservices)
+.tye/
+
+# Others
+node_modules/
