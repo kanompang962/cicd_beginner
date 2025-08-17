@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # .NET 8 API Backend
+  api:
+    build:
+      context: ./api  # path to your .NET API project folder
+      dockerfile: Dockerfile
+    container_name: dotnet-api
+    ports:
+      - "5000:8080"  # map host:5000 to container:8080
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - CORS_ORIGINS=http://localhost:4200,http://localhost:80
+    networks:
+      - cicd_beginner-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || wget -q --spider http://localhost:8080/ || timeout 5s bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  # Angular 20 Frontend  
+  web:
+    build:
+      context: ./web  # path to your Angular project folder
+      dockerfile: Dockerfile
+      args:
+        - API_URL=http://localhost:5000  # API endpoint for Angular
+    container_name: angular-web
+    ports:
+      - "80:80"  # map host:80 to container:80
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - cicd_beginner-network
+    environment:
+      - NODE_ENV=production
+
+networks:
+  cicd_beginner-network:
+    driver: bridge
