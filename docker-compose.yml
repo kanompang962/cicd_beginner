@@ -38,6 +38,7 @@ services:
       - cicd_beginner-network
     environment:
       - NODE_ENV=production
+      - API_URL=http://localhost:5000  # Runtime environment variable
 
 networks:
   cicd_beginner-network:
