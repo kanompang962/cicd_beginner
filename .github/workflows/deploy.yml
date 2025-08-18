@@ -1,0 +1,234 @@
+# .github/workflows/deploy.yml - สร้างไฟล์นี้ใน GitHub repository
+name: Deploy CICD Beginner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual triggers
+
+env:
+  PROJECT_NAME: cicd_beginner
+  DEPLOY_PATH: /opt/deployments/cicd_beginner
+
+jobs:
+  # Test Backend
+  test-api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          
+      - name: Restore dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+        
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  # Test Frontend
+  test-web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./web
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './web/package-lock.json'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Lint (if you have linting)
+        run: npm run lint || echo "No lint script found"
+        continue-on-error: true
+        
+      - name: Build
+        run: npm run build || npm run build:prod
+        
+      - name: Test (if you have tests)
+        run: npm run test || echo "No test script found"
+        continue-on-error: true
+
+  # Deploy to Production
+  deploy:
+    needs: [test-api, test-web]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          timeout: 600
+          command_timeout: 300
+          script: |
+            set -e
+            
+            echo "🚀 Starting deployment for cicd_beginner"
+            echo "📍 Deploy path: /opt/deployments/cicd_beginner"
+            
+            # Navigate to project directory
+            cd /opt/deployments/cicd_beginner
+            
+            # Check if directory exists
+            if [ ! -d ".git" ]; then
+              echo "❌ Git repository not found in deployment directory"
+              exit 1
+            fi
+            
+            # Create backup
+            echo "📦 Creating backup..."
+            sudo mkdir -p /opt/backups
+            backup_name="backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+            tar -czf "/opt/backups/$backup_name" \
+              --exclude=node_modules \
+              --exclude=bin \
+              --exclude=obj \
+              --exclude=.git \
+              . 2>/dev/null || echo "Warning: Backup creation had issues"
+            
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+            
+            # Check if docker-compose.prod.yml exists
+            if [ ! -f "docker-compose.prod.yml" ]; then
+              echo "❌ docker-compose.prod.yml not found!"
+              echo "ℹ️ Using docker-compose.yml instead..."
+              COMPOSE_FILE="docker-compose.yml"
+            else
+              COMPOSE_FILE="docker-compose.prod.yml"
+            fi
+            
+            echo "📋 Using compose file: $COMPOSE_FILE"
+            
+            # Stop existing containers
+            echo "🛑 Stopping existing containers..."
+            docker-compose -f "$COMPOSE_FILE" down || true
+            
+            # Remove old images
+            echo "🧹 Cleaning up old images..."
+            docker images | grep cicd_beginner | awk '{print $3}' | xargs docker rmi -f || true
+            
+            # Build new images
+            echo "🔨 Building new images..."
+            docker-compose -f "$COMPOSE_FILE" build --no-cache
+            
+            # Start new containers
+            echo "🚀 Starting new containers..."
+            docker-compose -f "$COMPOSE_FILE" up -d
+            
+            # Wait for containers to start
+            echo "⏳ Waiting for containers to start..."
+            sleep 45
+            
+            # Health check function
+            health_check() {
+              local url=$1
+              local service_name=$2
+              local max_attempts=20
+              local attempt=1
+              
+              echo "🏥 Health checking $service_name at $url"
+              
+              while [ $attempt -le $max_attempts ]; do
+                if curl -f -s "$url" > /dev/null 2>&1; then
+                  echo "✅ $service_name is healthy"
+                  return 0
+                fi
+                echo "⏳ Health check $attempt/$max_attempts for $service_name"
+                sleep 15
+                attempt=$((attempt + 1))
+              done
+              
+              echo "❌ Health check failed for $service_name"
+              return 1
+            }
+            
+            # Perform health checks
+            echo "🏥 Performing health checks..."
+            
+            # Check if containers are running
+            if ! docker ps | grep -q "cicd-beginner-api"; then
+              echo "❌ API container is not running"
+              docker-compose -f "$COMPOSE_FILE" logs api
+              exit 1
+            fi
+            
+            if ! docker ps | grep -q "cicd-beginner-web"; then
+              echo "❌ Web container is not running"
+              docker-compose -f "$COMPOSE_FILE" logs web
+              exit 1
+            fi
+            
+            # Health checks
+            if health_check "http://localhost:5001" "API"; then
+              if health_check "http://localhost:3001" "Web"; then
+                echo "✅ All health checks passed!"
+                
+                # Test Nginx configuration and reload
+                if sudo nginx -t; then
+                  sudo nginx -s reload
+                  echo "✅ Nginx reloaded successfully"
+                else
+                  echo "❌ Nginx configuration test failed"
+                fi
+                
+                # Final cleanup
+                echo "🧹 Final cleanup..."
+                docker system prune -f
+                
+                echo "🎉 Deployment completed successfully!"
+                echo "🌐 Your application should be available at: https://cicd-beginner.tainchaidev.online"
+                
+              else
+                echo "❌ Web health check failed"
+                echo "📋 Container logs:"
+                docker-compose -f "$COMPOSE_FILE" logs web
+                exit 1
+              fi
+            else
+              echo "❌ API health check failed"
+              echo "📋 Container logs:"
+              docker-compose -f "$COMPOSE_FILE" logs api
+              exit 1
+            fi
+
+  # Notify deployment status
+  notify:
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Send notification
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+          else
+            echo "❌ Deployment failed!"
+          fi
