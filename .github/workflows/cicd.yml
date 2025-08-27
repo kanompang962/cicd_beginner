@@ -1,14 +1,16 @@
-- name: Deploy to VPS
-  uses: appleboy/ssh-action@v1.0.3
-  with:
-    host: ${{ secrets.VPS_HOST }}
-    username: ${{ secrets.VPS_USERNAME }}
-    key: ${{ secrets.VPS_SSH_KEY }}
-    script: |
-      cd /home/${{ secrets.VPS_USERNAME }}/tainchai
-      docker-compose pull
-      docker-compose up -d
-
+name: CI/CD Pipeline
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Echo test
+        run: echo "Workflow is running"
 # name: CI/CD Pipeline
 
 # on:
