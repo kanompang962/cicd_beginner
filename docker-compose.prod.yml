@@ -17,7 +17,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
       - CORS_ORIGINS=https://cicd-beginner.tainchaidev.online
-      - DATABASE_CONNECTION=${DATABASE_CONNECTION:-}
+      # - DATABASE_CONNECTION=${DATABASE_CONNECTION:-}
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this}
       - API_BASE_URL=https://cicd-beginner-api.tainchaidev.online
     networks:
