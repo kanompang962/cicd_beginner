@@ -1,16 +1,16 @@
-name: CI/CD Pipeline
+name: Test Workflow
 on:
   push:
     branches:
       - main
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Echo test
-        run: echo "Workflow is running"
+      - name: Print message
+        run: echo "GitHub Actions is working!"
 # name: CI/CD Pipeline
 
 # on:
