@@ -58,13 +58,13 @@ jobs:
       - name: Build and push Angular Docker image
         working-directory: ./web
         run: |
-          docker build -t yourusername/tainchai-web:latest .
-          docker push yourusername/tainchai-web:latest
+          docker build -t kanompang962/cicd-beginner-web:latest .
+          docker push kanompang962/cicd-beginner-web:latest
       - name: Build and push .NET Docker image
         working-directory: ./api
         run: |
-          docker build -t yourusername/tainchai-api:latest .
-          docker push yourusername/tainchai-api:latest
+          docker build -t kanompang962/cicd-beginner-api:latest .
+          docker push kanompang962/cicd-beginner-api:latest
 
   deploy:
     needs: build-and-push-docker
