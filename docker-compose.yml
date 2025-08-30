@@ -8,7 +8,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8080
-      - CORS_ORIGINS=http://tainchaidev.online,http://localhost:80
+      - CORS_ORIGINS=http://tainchaidev.online,http://localhost:8080
     networks:
       - cicd_beginner-network
     healthcheck:
@@ -21,7 +21,7 @@ services:
     image: kanompang962/cicd-beginner-web:latest
     container_name: angular-web
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       api:
         condition: service_healthy
