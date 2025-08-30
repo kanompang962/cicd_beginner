@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:5000' // ← Container port
+  apiUrl: 'https://tainchaidev.online/api' // ← Container port
 };

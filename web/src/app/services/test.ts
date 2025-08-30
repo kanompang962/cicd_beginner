@@ -17,10 +17,10 @@ export class TestService { // ← เปลี่ยนชื่อเป็น 
 
   // เพิ่ม methods อื่นๆ ตามต้องการ
   getUsers(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/api/users`);
+    return this.http.get<any[]>(`${this.apiUrl}/users`);
   }
 
   getProducts(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/api/products`);
+    return this.http.get<any[]>(`${this.apiUrl}/products`);
   }
 }

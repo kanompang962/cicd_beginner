@@ -23,7 +23,7 @@ jobs:
         run: npm install
       - name: Build Angular
         working-directory: ./web
-        run: npm run build --prod
+        run: npm run build -- --configuration production
       - name: Test Angular
         working-directory: ./web
         run: npm run test -- --watch=false --browsers=ChromeHeadless
