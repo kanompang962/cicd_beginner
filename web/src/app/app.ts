@@ -1,10 +1,14 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { TestService } from './services/test';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [
+    RouterOutlet,
+    DatePipe,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
@@ -34,5 +38,10 @@ export class App implements OnInit {
         console.error('Health check error:', error);
       }
     });
+  }
+
+  // ฟังก์ชันแปลง ISO string → Date
+  formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleString(); // แสดงตาม timezone เครื่อง user
   }
 }
